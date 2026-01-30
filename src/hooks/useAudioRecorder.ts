@@ -17,9 +17,7 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
     setError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
-        ? "audio/webm;codecs=opus"
-        : "audio/webm";
+
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
@@ -35,7 +33,8 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
       mediaRecorder.start();
       setIsRecording(true);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Error al acceder al micrófono";
+      const message =
+        err instanceof Error ? err.message : "Error al acceder al micrófono";
       setError(message);
     }
   }, []);
