@@ -58,15 +58,26 @@ export function ChatPage() {
       const content = response.data?.content?.trim() ?? "";
       const audioDataUrl = response.data?.audio ?? undefined;
 
-      addMessage({
-        role: "assistant",
-        text: content || undefined,
-        audioDataUrl: audioDataUrl ?? undefined,
-      });
+      const msgId = generateId();
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: msgId,
+          createdAt: Date.now(),
+          role: "assistant" as const,
+          text: content || undefined,
+          audioDataUrl: audioDataUrl ?? undefined,
+        },
+      ]);
 
-      setAvatarState("idle");
+      // Auto-reproducir el audio de respuesta
+      if (audioDataUrl) {
+        handlePlayAudio(audioDataUrl, msgId);
+      } else {
+        setAvatarState("idle");
+      }
     },
-    [addMessage]
+    [addMessage, handlePlayAudio]
   );
 
   const handleSendText = useCallback(

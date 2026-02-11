@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useAudioRecorder } from "../../hooks/useAudioRecorder";
 
 type ComposerProps = {
@@ -10,6 +10,7 @@ type ComposerProps = {
 export function Composer({ onSendText, onSendAudio, disabled }: ComposerProps) {
   const [text, setText] = useState("");
   const { isRecording, startRecording, stopRecording, error: recorderError } = useAudioRecorder();
+  const recordingRef = useRef(false);
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
@@ -22,15 +23,18 @@ export function Composer({ onSendText, onSendAudio, disabled }: ComposerProps) {
     [text, disabled, onSendText]
   );
 
-  const handleToggleRecord = useCallback(async () => {
-    if (disabled) return;
-    if (isRecording) {
-      const dataUrl = await stopRecording();
-      if (dataUrl) onSendAudio(dataUrl);
-    } else {
-      await startRecording();
-    }
-  }, [disabled, isRecording, startRecording, stopRecording, onSendAudio]);
+  const handleRecordStart = useCallback(async () => {
+    if (disabled || recordingRef.current) return;
+    recordingRef.current = true;
+    await startRecording();
+  }, [disabled, startRecording]);
+
+  const handleRecordEnd = useCallback(async () => {
+    if (!recordingRef.current) return;
+    recordingRef.current = false;
+    const dataUrl = await stopRecording();
+    if (dataUrl) onSendAudio(dataUrl);
+  }, [stopRecording, onSendAudio]);
 
   return (
     <div
@@ -55,17 +59,22 @@ export function Composer({ onSendText, onSendAudio, disabled }: ComposerProps) {
           />
           <button
             type="button"
-            onClick={handleToggleRecord}
+            onMouseDown={handleRecordStart}
+            onMouseUp={handleRecordEnd}
+            onMouseLeave={handleRecordEnd}
+            onTouchStart={handleRecordStart}
+            onTouchEnd={handleRecordEnd}
+            onTouchCancel={handleRecordEnd}
             disabled={disabled}
-            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-colors ${
+            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-colors select-none ${
               isRecording
-                ? "bg-red-500 text-white"
+                ? "bg-red-500 text-white scale-110"
                 : "bg-white/20 text-white hover:bg-white/30"
             }`}
-            title={isRecording ? "Detener grabación" : "Grabar audio"}
+            title="Mantener para hablar"
           >
             {isRecording ? (
-              <span className="text-sm font-medium">■</span>
+              <span className="text-sm font-medium animate-pulse">●</span>
             ) : (
               <span className="text-lg">🎤</span>
             )}
